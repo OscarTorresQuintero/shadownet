@@ -36,4 +36,36 @@ class VibrationService {
 
     await Vibration.vibrate(pattern: _missionComplete);
   }
+  
+    // Patrón de autodestrucción (3 fallos biométricos)
+  static const List<int> _selfDestruct = [
+    500, 150,
+    500, 150,
+    500, 150,
+    1000, 200,
+    1000, 200,
+    1000,
+  ];
+
+
+  // Al acercarte a un nodo → vibra SOS
+  static Future<void> nodeDetected() async {
+    final hasVibrator = await Vibration.hasVibrator();
+    if (!hasVibrator) return;
+
+    await Vibration.vibrate(pattern: _nodeDetected);
+  }
+
+  // Al fallar biometría 3 veces → vibra fuerte 5 segundos
+  static Future<void> selfDestruct() async {
+    final hasVibrator = await Vibration.hasVibrator();
+    if (!hasVibrator) return;
+
+    await Vibration.vibrate(pattern: _selfDestruct);
+  }
+
+  // Cancela cualquier vibración activa
+  static Future<void> cancel() async {
+    await Vibration.cancel();
+  }
 }
