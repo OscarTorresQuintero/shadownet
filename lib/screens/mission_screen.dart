@@ -405,3 +405,148 @@ class _MissionScreenState extends State<MissionScreen>
     );
   }
 
+  // ═══════════════════════════════════════════════
+  //  BUILD
+  // ═══════════════════════════════════════════════
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: TerminalTheme.bgColor,
+      appBar: AppBar(
+        backgroundColor: TerminalTheme.bgColor,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios,
+              color: TerminalTheme.primaryGreen, size: 16),
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.node.codename,
+                style: TerminalTheme.terminalSmall),
+            Text(widget.node.location,
+                style: TerminalTheme.terminalSmall
+                    .copyWith(fontSize: 10)),
+          ],
+        ),
+        actions: [
+          if (_missionComplete)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Icon(Icons.check_circle,
+                  color: TerminalTheme.cyan, size: 20),
+            ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildProgressBar(),
+          Expanded(child: _buildTerminalOutput()),
+          if (!_missionComplete) _buildCommandInput(),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  //  WIDGETS VISUALES
+  // ═══════════════════════════════════════════════
+  Widget _buildProgressBar() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PROGRESO: $_commandCount/${_requiredCommands.length} pasos',
+          style: TerminalTheme.terminalSmall,
+        ),
+        const SizedBox(height: 4),
+        LinearProgressIndicator(
+          value: _requiredCommands.isEmpty
+              ? 0
+              : _commandCount / _requiredCommands.length,
+          backgroundColor: TerminalTheme.bgColor,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            _missionComplete
+                ? TerminalTheme.cyan
+                : TerminalTheme.primaryGreen,
+          ),
+          minHeight: 2,
+        ),
+      ],
+    ),
+  );
+
+  Widget _buildTerminalOutput() => ListView.builder(
+    controller: _scrollController,
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    itemCount: _lines.length,
+    itemBuilder: (_, i) {
+      final line = _lines[i];
+      return Text(
+        line.text,
+        style: TerminalTheme.terminalSmall.copyWith(
+          color: line.isInput ? TerminalTheme.amber : line.color,
+          fontSize: 13,
+          fontWeight: line.isInput
+              ? FontWeight.bold
+              : FontWeight.normal,
+        ),
+      );
+    },
+  );
+
+  Widget _buildCommandInput() => Container(
+    decoration: BoxDecoration(
+      color: TerminalTheme.bgColor,
+      border: Border(
+        top: BorderSide(
+          color: TerminalTheme.dimGreen.withOpacity(0.4),
+        ),
+      ),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    child: Row(
+      children: [
+        Text(
+          'shadownet\$> ',
+          style: TerminalTheme.terminalText
+              .copyWith(color: TerminalTheme.amber),
+        ),
+        Expanded(
+          child: TextField(
+            controller: _cmdController,
+            focusNode: _focusNode,
+            autofocus: true,
+            style: TerminalTheme.terminalText,
+            cursorColor: TerminalTheme.primaryGreen,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            onSubmitted: _executeCommand,
+            enabled: !_isProcessing,
+          ),
+        ),
+        if (_isProcessing)
+          const TerminalLoader(message: ''),
+      ],
+    ),
+  );
+}
+
+// ═══════════════════════════════════════════════
+//  MODELO INTERNO DE LÍNEA DE TERMINAL
+// ═══════════════════════════════════════════════
+class _TerminalLine {
+  final String text;
+  final Color color;
+  final bool isInput;
+
+  _TerminalLine({
+    required this.text,
+    required this.color,
+    required this.isInput,
+  });
+}
