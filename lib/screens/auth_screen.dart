@@ -53,33 +53,41 @@ class _AuthScreenState extends State<AuthScreen>
   // ═══════════════════════════════════════════
   //  AUTENTICACIÓN BIOMÉTRICA
   // ═══════════════════════════════════════════
-  Future<void> _authenticate() async {
+Future<void> _authenticate() async {
   if (_isLocked || _isScanning || _selfDestructActive) return;
 
   setState(() {
-    _isScanning = true;
+    _isScanning    = true;
     _statusMessage = '> ESCANEANDO ADN BIOMÉTRICO...';
-    _subMessage = '> No retire el dedo del sensor';
-    _statusColor = TerminalTheme.amber;
+    _subMessage    = '> Coloca tu dedo en el sensor';
+    _statusColor   = TerminalTheme.amber;
   });
 
   try {
+    final bool isSupported = await _auth.isDeviceSupported();
+    if (!isSupported) {
+      setState(() => _isScanning = false);
+      _handleSimulatedAuth();
+      return;
+    }
 
-    final biometrics = await _auth.getAvailableBiometrics();
+    final List<BiometricType> biometrics =
+        await _auth.getAvailableBiometrics();
 
     print("BIOMETRÍA DISPONIBLE: $biometrics");
 
     if (biometrics.isEmpty) {
-      // Si no hay biometría, usar modo simulado
+      setState(() => _isScanning = false);
       _handleSimulatedAuth();
       return;
     }
 
     final bool authenticated = await _auth.authenticate(
-      localizedReason: 'Valida tu identidad',
+      localizedReason: 'Coloca tu huella para acceder a ShadowNet',
       options: const AuthenticationOptions(
         biometricOnly: true,
         stickyAuth: true,
+        sensitiveTransaction: false,
       ),
     );
 
@@ -90,11 +98,17 @@ class _AuthScreenState extends State<AuthScreen>
     }
 
   } on PlatformException catch (e) {
+    print("ERROR BIOMÉTRICO: ${e.code} - ${e.message}");
+    setState(() => _isScanning = false);
 
-    print("ERROR BIOMÉTRICO: $e");
-
-    // Si hay error en el sensor, usar modo simulado
-    _handleSimulatedAuth();
+    if (e.code == 'NotEnrolled') {
+      _handleSimulatedAuth();
+    } else if (e.code == 'LockedOut' ||
+               e.code == 'PermanentlyLockedOut') {
+      _handleFailure();
+    } else {
+      _handleSimulatedAuth();
+    }
   }
 }
   // ═══════════════════════════════════════════
