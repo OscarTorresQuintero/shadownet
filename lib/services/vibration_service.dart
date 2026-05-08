@@ -29,15 +29,8 @@ class VibrationService {
     letterGap,
     dot, symbolGap, dot, symbolGap, dot,
   ];
-  // Al completar una misión → vibra código Morse "OK"
-  static Future<void> missionComplete() async {
-    final hasVibrator = await Vibration.hasVibrator();
-    if (!hasVibrator) return;
 
-    await Vibration.vibrate(pattern: _missionComplete);
-  }
-  
-    // Patrón de autodestrucción (3 fallos biométricos)
+  // Patrón de autodestrucción (3 fallos biométricos)
   static const List<int> _selfDestruct = [
     500, 150,
     500, 150,
@@ -47,6 +40,13 @@ class VibrationService {
     1000,
   ];
 
+  // Al completar una misión → vibra código Morse "OK"
+  static Future<void> missionComplete() async {
+    final hasVibrator = await Vibration.hasVibrator();
+    if (!hasVibrator) return;
+
+    await Vibration.vibrate(pattern: _missionComplete);
+  }
 
   // Al acercarte a un nodo → vibra SOS
   static Future<void> nodeDetected() async {

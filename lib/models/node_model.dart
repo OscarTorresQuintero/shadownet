@@ -7,15 +7,14 @@ enum NodeStatus {
   active,     // Entraste a la misión
   completed,  // Misión terminada
 }
-
 class MissionNode {
-  final String id;
-  final String codename;
-  final String location;
-  final String mission;
-  final String missionDetails;
-  final LatLng coordinates;
-  NodeStatus status;
+  final String id;           // "ALPHA", "BETA", "GAMMA"
+  final String codename;     // "NODO-ALPHA"
+  final String location;     // Nombre del lugar real
+  final String mission;      // Descripción corta
+  final String missionDetails; // Texto largo del terminal
+  final LatLng coordinates;  // Coordenadas GPS
+  NodeStatus status;         // Estado actual del nodo
 
   MissionNode({
     required this.id,
@@ -24,11 +23,11 @@ class MissionNode {
     required this.mission,
     required this.missionDetails,
     required this.coordinates,
-    this.status = NodeStatus.locked,
+    this.status = NodeStatus.locked, // Por defecto bloqueado
   });
 }
-
 final List<MissionNode> shadowNetNodes = [
+
   MissionNode(
     id: 'ALPHA',
     codename: 'NODO-ALPHA',
@@ -41,6 +40,7 @@ final List<MissionNode> shadowNetNodes = [
       '> PRIORIDAD: CRÍTICA',
     coordinates: LatLng(4.7073, -74.2296),
   ),
+
   MissionNode(
     id: 'BETA',
     codename: 'NODO-BETA',
@@ -53,6 +53,7 @@ final List<MissionNode> shadowNetNodes = [
       '> PRIORIDAD: ALTA',
     coordinates: LatLng(4.7056, -74.2341),
   ),
+
   MissionNode(
     id: 'GAMMA',
     codename: 'NODO-GAMMA',
@@ -65,4 +66,5 @@ final List<MissionNode> shadowNetNodes = [
       '> PRIORIDAD: MÁXIMA',
     coordinates: LatLng(4.7108, -74.2198),
   ),
+
 ];
