@@ -1,20 +1,43 @@
 import 'package:latlong2/latlong.dart';
 
-// ── ESTADOS POSIBLES DE UN NODO ──────────────
+/// Estados posibles de un nodo de misión.
+///
+/// - [locked]: El operador está lejos (>500m). No visible.
+/// - [nearby]: El operador está cerca (<500m). Activado.
+/// - [active]: El operador entró a la misión.
+/// - [completed]: Misión finalizada exitosamente.
 enum NodeStatus {
-  locked,     // Estás lejos, no se ve en el mapa
-  nearby,     // Estás a menos de 500m, se activa
-  active,     // Entraste a la misión
-  completed,  // Misión terminada
+  locked,
+  nearby,
+  active,
+  completed,
 }
+
+/// Representa un nodo de misión en el mapa de ShadowNet.
+///
+/// Cada nodo tiene una ubicación física en Mosquera y se activa
+/// cuando el operador se acerca a menos de 500m.
 class MissionNode {
-  final String id;           // "ALPHA", "BETA", "GAMMA"
-  final String codename;     // "NODO-ALPHA"
-  final String location;     // Nombre del lugar real
-  final String mission;      // Descripción corta
-  final String missionDetails; // Texto largo del terminal
-  final LatLng coordinates;  // Coordenadas GPS
-  NodeStatus status;         // Estado actual del nodo
+  /// Identificador corto del nodo. Ej: "ALPHA".
+  final String id;
+
+  /// Nombre en clave del nodo. Ej: "NODO-ALPHA".
+  final String codename;
+
+  /// Nombre del lugar físico donde está ubicado el nodo.
+  final String location;
+
+  /// Breve descripción de la misión asociada al nodo.
+  final String mission;
+
+  /// Detalles extendidos de la misión mostrados en el terminal.
+  final String missionDetails;
+
+  /// Coordenadas GPS del nodo en Mosquera, Cundinamarca.
+  final LatLng coordinates;
+
+  /// Estado actual del nodo. Cambia según la distancia del operador.
+  NodeStatus status;
 
   MissionNode({
     required this.id,
@@ -23,9 +46,14 @@ class MissionNode {
     required this.mission,
     required this.missionDetails,
     required this.coordinates,
-    this.status = NodeStatus.locked, // Por defecto bloqueado
+    this.status = NodeStatus.locked,
   });
 }
+
+/// Lista de nodos de misión de ShadowNet.
+///
+/// Cada nodo se activa cuando el operador se acerca a menos de 500m,
+/// lo que permite que el juego detecte la presencia y actualice el estado.
 final List<MissionNode> shadowNetNodes = [
 
   MissionNode(
