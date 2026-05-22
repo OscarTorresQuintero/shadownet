@@ -86,4 +86,21 @@ class _TypewriterTextState extends State<TypewriterText> {
     );
   }
 }
+class TerminalDivider extends StatelessWidget {
+  final String? label;
+  const TerminalDivider({super.key, this.label});
 
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        label != null
+            ? '═══[ $label ]══════════════════════'
+            : '═══════════════════════════════════',
+        style: TerminalTheme.terminalSmall,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
