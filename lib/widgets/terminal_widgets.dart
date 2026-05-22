@@ -1,3 +1,8 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+
+import '../theme/terminal_theme.dart';
+
 class BlinkingCursor extends StatefulWidget {
   const BlinkingCursor({super.key});
 

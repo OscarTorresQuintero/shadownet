@@ -1,9 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/faction_model.dart';
 import '../services/faction_provider.dart';
-import '../widgets/terminal_widgets.dart';
 
 /// Pantalla de perfil del agente de ShadowNet.
 /// Operación Camaleón - Perfil Dinámico

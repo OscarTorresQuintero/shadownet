@@ -5,7 +5,7 @@ import 'package:local_auth/local_auth.dart';
 import '../theme/terminal_theme.dart';
 import '../widgets/terminal_widgets.dart';
 import '../services/vibration_service.dart';
-import 'radar_screen.dart'; // ← Este import es clave
+import 'radar_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -53,74 +53,53 @@ class _AuthScreenState extends State<AuthScreen>
   // ═══════════════════════════════════════════
   //  AUTENTICACIÓN BIOMÉTRICA
   // ═══════════════════════════════════════════
-Future<void> _authenticate() async {
-  if (_isLocked || _isScanning || _selfDestructActive) return;
+  Future<void> _authenticate() async {
+    if (_isLocked || _isScanning || _selfDestructActive) return;
 
-  setState(() {
-    _isScanning    = true;
-    _statusMessage = '> ESCANEANDO ADN BIOMÉTRICO...';
-    _subMessage    = '> Coloca tu dedo en el sensor';
-    _statusColor   = TerminalTheme.amber;
-  });
+    setState(() {
+      _isScanning    = true;
+      _statusMessage = '> ESCANEANDO ADN BIOMÉTRICO...';
+      _subMessage    = '> No retire el dedo del sensor';
+      _statusColor   = TerminalTheme.amber;
+    });
 
-  try {
-    final bool isSupported = await _auth.isDeviceSupported();
-    if (!isSupported) {
-      setState(() => _isScanning = false);
-      _handleSimulatedAuth();
-      return;
-    }
+    try {
+      final biometrics = await _auth.getAvailableBiometrics();
 
-    final List<BiometricType> biometrics =
-        await _auth.getAvailableBiometrics();
+      if (biometrics.isEmpty) {
+        _handleSimulatedAuth();
+        return;
+      }
 
-    print("BIOMETRÍA DISPONIBLE: $biometrics");
+      final bool authenticated = await _auth.authenticate(
+        localizedReason: 'Valida tu identidad',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
 
-    if (biometrics.isEmpty) {
-      setState(() => _isScanning = false);
-      _handleSimulatedAuth();
-      return;
-    }
-
-    final bool authenticated = await _auth.authenticate(
-      localizedReason: 'Coloca tu huella para acceder a ShadowNet',
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
-        sensitiveTransaction: false,
-      ),
-    );
-
-    if (authenticated) {
-      _handleSuccess();
-    } else {
-      _handleFailure();
-    }
-
-  } on PlatformException catch (e) {
-    print("ERROR BIOMÉTRICO: ${e.code} - ${e.message}");
-    setState(() => _isScanning = false);
-
-    if (e.code == 'NotEnrolled') {
-      _handleSimulatedAuth();
-    } else if (e.code == 'LockedOut' ||
-               e.code == 'PermanentlyLockedOut') {
-      _handleFailure();
-    } else {
+      if (authenticated) {
+        _handleSuccess();
+      } else {
+        _handleFailure();
+      }
+    } on PlatformException catch (e) {
+      print("ERROR BIOMÉTRICO: $e");
       _handleSimulatedAuth();
     }
   }
-}
+
   // ═══════════════════════════════════════════
   //  MANEJADORES DE RESULTADO
   // ═══════════════════════════════════════════
   void _handleSuccess() {
     setState(() {
-      _isScanning    = false;
+      _isScanning     = false;
       _failedAttempts = 0;
-      _statusMessage = '> ✓ ADN VERIFICADO';
-      _subMessage    = '> Acceso concedido. Bienvenido, Operador.';
-      _statusColor   = TerminalTheme.primaryGreen;
+      _statusMessage  = '> ✓ ADN VERIFICADO';
+      _subMessage     = '> Acceso concedido. Bienvenido, Operador.';
+      _statusColor    = TerminalTheme.primaryGreen;
     });
 
     Future.delayed(const Duration(milliseconds: 1500), () {
@@ -199,16 +178,13 @@ Future<void> _authenticate() async {
       _statusColor   = TerminalTheme.red;
     });
 
-    // Vibrar fuerte durante toda la cuenta regresiva
     VibrationService.selfDestruct();
 
-    // Cuenta regresiva de 5 a 0
     for (int i = 5; i >= 0; i--) {
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) setState(() => _selfDestructCountdown = i);
     }
 
-    // Desbloquear y resetear después de los 5 segundos
     if (mounted) {
       setState(() {
         _selfDestructActive    = false;
@@ -256,52 +232,40 @@ Future<void> _authenticate() async {
   //  WIDGETS VISUALES
   // ═══════════════════════════════════════════
   Widget _buildHeader() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('SHADOWNET://AUTH', style: TerminalTheme.terminalSmall),
-      const SizedBox(height: 4),
-      Text('PROTOCOLO DE ACCESO v2.084',
-          style: TerminalTheme.terminalTitle),
-      const SizedBox(height: 8),
-      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 8, height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _isLocked
-                  ? TerminalTheme.red
-                  : TerminalTheme.primaryGreen,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _isLocked ? 'SISTEMA BLOQUEADO' : 'SISTEMA ACTIVO',
-            style: TerminalTheme.terminalSmall.copyWith(
-              color: _isLocked
-                  ? TerminalTheme.red
-                  : TerminalTheme.dimGreen,
-            ),
+          Text('SHADOWNET://AUTH', style: TerminalTheme.terminalSmall),
+          const SizedBox(height: 4),
+          Text('PROTOCOLO DE ACCESO v2.084', style: TerminalTheme.terminalTitle),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isLocked ? TerminalTheme.red : TerminalTheme.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _isLocked ? 'SISTEMA BLOQUEADO' : 'SISTEMA ACTIVO',
+                style: TerminalTheme.terminalSmall.copyWith(
+                  color: _isLocked ? TerminalTheme.red : TerminalTheme.dimGreen,
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-    ],
-  );
+      );
 
   Widget _buildScanArea() {
-    // Pantalla de autodestrucción
     if (_selfDestructActive) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              '☢',
-              style: TextStyle(
-                color: TerminalTheme.red,
-                fontSize: 80,
-              ),
-            ),
+            Text('☢', style: TextStyle(color: TerminalTheme.red, fontSize: 80)),
             const SizedBox(height: 20),
             Text(
               'PROTOCOLO DE AUTODESTRUCCIÓN INICIADO',
@@ -316,36 +280,32 @@ Future<void> _authenticate() async {
             const SizedBox(height: 10),
             Text(
               'ELIMINANDO DATOS SENSIBLES...',
-              style: TerminalTheme.terminalSmall
-                  .copyWith(color: TerminalTheme.red),
+              style: TerminalTheme.terminalSmall.copyWith(color: TerminalTheme.red),
             ),
           ],
         ),
       );
     }
 
-    // Animación normal de escaneo
+    // Contenedores anidados — huella siempre visible en el centro
     return Center(
       child: AnimatedBuilder(
         animation: _scanAnimation,
         builder: (context, child) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              // Anillo exterior
-              Container(
-                width: 220, height: 220,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _statusColor.withOpacity(0.15),
-                    width: 1,
-                  ),
-                ),
+          return Container(
+            width: 220,
+            height: 220,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: _statusColor.withOpacity(0.3),
+                width: 1.5,
               ),
-              // Anillo medio
-              Container(
-                width: 170, height: 170,
+            ),
+            child: Center(
+              child: Container(
+                width: 170,
+                height: 170,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
@@ -355,35 +315,28 @@ Future<void> _authenticate() async {
                     width: 1,
                   ),
                 ),
-              ),
-              // Anillo interior
-              Container(
-                width: 130, height: 130,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _statusColor.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-              ),
-              // Ícono de huella
-              Icon(
-                Icons.fingerprint,
-                size: 100,
-                color: _statusColor.withOpacity(0.9),
-              ),
-              // Línea de escaneo animada
-              if (_isScanning)
-                Positioned(
-                  top: 60 + (_scanAnimation.value * 100),
+                child: Center(
                   child: Container(
                     width: 130,
-                    height: 2,
-                    color: TerminalTheme.cyan.withOpacity(0.7),
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _statusColor.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.fingerprint,
+                        size: 100,
+                        color: _statusColor,
+                      ),
+                    ),
                   ),
                 ),
-            ],
+              ),
+            ),
           );
         },
       ),
@@ -391,61 +344,50 @@ Future<void> _authenticate() async {
   }
 
   Widget _buildStatus() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        _statusMessage,
-        style: TerminalTheme.terminalText
-            .copyWith(color: _statusColor),
-      ),
-      const SizedBox(height: 4),
-      Text(_subMessage, style: TerminalTheme.terminalSmall),
-      const SizedBox(height: 10),
-      // Indicadores de intentos (3 cuadros)
-      Row(
-        children: List.generate(3, (i) => Container(
-          margin: const EdgeInsets.only(right: 8),
-          width: 22, height: 22,
-          decoration: BoxDecoration(
-            border: Border.all(color: TerminalTheme.red, width: 1),
-            color: i < _failedAttempts
-                ? TerminalTheme.red.withOpacity(0.5)
-                : Colors.transparent,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _statusMessage,
+            style: TerminalTheme.terminalText.copyWith(color: _statusColor),
           ),
-          child: i < _failedAttempts
-              ? const Icon(Icons.close,
-                  color: TerminalTheme.red, size: 14)
-              : null,
-        )),
-      ),
-    ],
-  );
+          const SizedBox(height: 4),
+          Text(_subMessage, style: TerminalTheme.terminalSmall),
+          const SizedBox(height: 10),
+          Row(
+            children: List.generate(3, (i) => Container(
+              margin: const EdgeInsets.only(right: 8),
+              width: 22, height: 22,
+              decoration: BoxDecoration(
+                border: Border.all(color: TerminalTheme.red, width: 1),
+                color: i < _failedAttempts
+                    ? TerminalTheme.red.withOpacity(0.5)
+                    : Colors.transparent,
+              ),
+              child: i < _failedAttempts
+                  ? const Icon(Icons.close, color: TerminalTheme.red, size: 14)
+                  : null,
+            )),
+          ),
+        ],
+      );
 
   Widget _buildAuthButton() => SizedBox(
-    width: double.infinity,
-    child: TerminalButton(
-      label: _isScanning
-          ? 'ESCANEANDO...'
-          : 'INICIAR ESCANEO BIOMÉTRICO',
-      onPressed: _isScanning ? null : _authenticate,
-      color: _failedAttempts > 0
-          ? TerminalTheme.amber
-          : TerminalTheme.primaryGreen,
-    ),
-  );
+        width: double.infinity,
+        child: TerminalButton(
+          label: _isScanning ? 'ESCANEANDO...' : 'INICIAR ESCANEO BIOMÉTRICO',
+          onPressed: _isScanning ? null : _authenticate,
+          color: _failedAttempts > 0 ? TerminalTheme.amber : TerminalTheme.primaryGreen,
+        ),
+      );
 
   Widget _buildFooter() => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(
-        'INTENTOS: $_failedAttempts/3',
-        style: TerminalTheme.terminalSmall,
-      ),
-      Row(children: [
-        Text('CIFRADO: AES-256  ',
-            style: TerminalTheme.terminalSmall),
-        const BlinkingCursor(),
-      ]),
-    ],
-  );
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('INTENTOS: $_failedAttempts/3', style: TerminalTheme.terminalSmall),
+          Row(children: [
+            Text('CIFRADO: AES-256  ', style: TerminalTheme.terminalSmall),
+            const BlinkingCursor(),
+          ]),
+        ],
+      );
 }
