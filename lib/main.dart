@@ -1,39 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'theme/terminal_theme.dart';
+import 'package:provider/provider.dart';
+
+import 'services/faction_provider.dart';
 import 'screens/auth_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Forzar orientación vertical
+  // Bloquea la rotación a vertical
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
-  // Barra de estado oscura y transparente
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: TerminalTheme.bgColor,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-
-  runApp(const ShadowNetApp());
-}
+runApp(
+  ChangeNotifierProvider(
+    create: (_) => FactionProvider(),
+    child: const ShadowNetApp(),
+  ),
+);
 
 class ShadowNetApp extends StatelessWidget {
   const ShadowNetApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ShadowNet',
-      debugShowCheckedModeBanner: false,
-      theme: TerminalTheme.darkTheme,
-      home: const AuthScreen(), // Siempre inicia en biometría
-    );
-  }
+  @override 
+  
+Widget build(BuildContext context) {
+  return Consumer<FactionProvider>(
+    builder: (context, factionProvider, child) {
+      return MaterialApp(
+        title: 'ShadowNet',
+        debugShowCheckedModeBanner: false,
+
+        theme: factionProvider.currentTheme,
+
+        home: const AuthScreen(),
+
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(1.0),
+            ),
+            child: child!,
+          );
+        },
+      );
+    },
+  );
 }
+SystemChrome.setSystemUIOverlayStyle(
+  const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ),
+);
