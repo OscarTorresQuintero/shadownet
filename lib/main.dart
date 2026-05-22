@@ -23,13 +23,30 @@ runApp(
 class ShadowNetApp extends StatelessWidget {
   const ShadowNetApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ShadowNet',
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  @override 
+  
+Widget build(BuildContext context) {
+  return Consumer<FactionProvider>(
+    builder: (context, factionProvider, child) {
+      return MaterialApp(
+        title: 'ShadowNet',
+        debugShowCheckedModeBanner: false,
+
+        theme: factionProvider.currentTheme,
+
+        home: const AuthScreen(),
+
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(1.0),
+            ),
+            child: child!,
+          );
+        },
+      );
+    },
+  );
 }
 SystemChrome.setSystemUIOverlayStyle(
   const SystemUiOverlayStyle(
