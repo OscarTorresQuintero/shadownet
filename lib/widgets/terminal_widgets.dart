@@ -142,3 +142,45 @@ class TerminalButton extends StatelessWidget {
     );
   }
 }
+class TerminalLoader extends StatefulWidget {
+  final String message;
+  const TerminalLoader({super.key, required this.message});
+
+  @override
+  State<TerminalLoader> createState() => _TerminalLoaderState();
+}
+
+class _TerminalLoaderState extends State<TerminalLoader> {
+  final List<String> _frames = [
+    '⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'
+  ];
+
+  int _frame = 0;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (mounted) setState(() => _frame = (_frame + 1) % _frames.length);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(_frames[_frame], style: TerminalTheme.terminalText),
+        const SizedBox(width: 8),
+        Text(widget.message, style: TerminalTheme.terminalSmall),
+      ],
+    );
+  }
+}
