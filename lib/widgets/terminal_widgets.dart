@@ -104,3 +104,41 @@ class TerminalDivider extends StatelessWidget {
     );
   }
 }
+class TerminalButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final Color? color;
+
+  const TerminalButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? TerminalTheme.primaryGreen;
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: onPressed != null,
+      onTap: onPressed,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: c, width: 1.5),
+            color: c.withOpacity(0.08),
+          ),
+          child: Text(
+            '[ $label ]',
+            style: TerminalTheme.terminalText.copyWith(color: c),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
