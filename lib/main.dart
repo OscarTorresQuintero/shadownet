@@ -13,8 +13,12 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  runApp(const ShadowNetApp());
-}
+runApp(
+  ChangeNotifierProvider(
+    create: (_) => FactionProvider(),
+    child: const ShadowNetApp(),
+  ),
+);
 
 class ShadowNetApp extends StatelessWidget {
   const ShadowNetApp({super.key});
